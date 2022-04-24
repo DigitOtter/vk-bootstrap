@@ -29,7 +29,7 @@ else ()
   endif()
 endif()
 
-add_library(vk-bootstrap src/VkBootstrap.h src/VkBootstrap.cpp src/VkBootstrapDispatch.h)
+add_library(vk-bootstrap STATIC src/VkBootstrap.h src/VkBootstrap.cpp src/VkBootstrapDispatch.h)
 add_library(vk-bootstrap::vk-bootstrap ALIAS vk-bootstrap)
 
 add_library(vk-bootstrap-compiler-warnings INTERFACE)
@@ -73,15 +73,19 @@ target_link_libraries(vk-bootstrap
         ${CMAKE_DL_LIBS})
 target_compile_features(vk-bootstrap PUBLIC cxx_std_14)
 
-include(GNUInstallDirs)
-install(FILES src/VkBootstrap.h src/VkBootstrapDispatch.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(TARGETS vk-bootstrap vk-bootstrap-compiler-warnings vk-bootstrap-vulkan-headers
-        EXPORT vk-bootstrap-targets
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+option(INSTALL_VK_BOOTSTRAP "Install vk-bootstrap library" ON)
 
-option(VK_BOOTSTRAP_TEST "Test Vk-Bootstrap with glfw and Catch2" OFF)
+if(${INSTALL_VK_BOOTSTRAP})
+	include(GNUInstallDirs)
+	install(FILES src/VkBootstrap.h src/VkBootstrapDispatch.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+	install(TARGETS vk-bootstrap vk-bootstrap-compiler-warnings vk-bootstrap-vulkan-headers
+			EXPORT vk-bootstrap-targets
+			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+			LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+			ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+	
+	option(VK_BOOTSTRAP_TEST "Test Vk-Bootstrap with glfw and Catch2" OFF)
+endif()
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR VK_BOOTSTRAP_TEST)
 
