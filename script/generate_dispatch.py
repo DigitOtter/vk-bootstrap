@@ -29,7 +29,7 @@
 # User will be prompted to install if not detected
 
 # Command Line Arguments
-# [--auto] Don't ask for input from the command line 
+# [--auto] Don't ask for input from the command line
 
 # Exclusions
 exclusions = [
@@ -41,6 +41,10 @@ exclusions = [
 # Excluded extension authors - don't generate anything for these types of extensions
 excluded_extension_authors = [
 	'NVX'
+]
+
+excluded_alias_types = [
+    'VkPipelineInfoKHR'
 ]
 
 # Check for/install xmltodict
@@ -152,7 +156,7 @@ for extension_node in extensions_node:
 					if '@feature' in require_node.keys():
 						requirements.append(require_node['@feature'])
 					if '@extension' in require_node.keys():
-						requirements.append(require_node['@extension'])
+						requirements.extend(require_node['@extension'].split(','))
 					if type(require_node['command']) is not list:
 						require_node['command'] = [require_node['command']]
 					for command_node in require_node['command']:
@@ -191,7 +195,7 @@ for command in device_commands:
 				if collection_count > 0:
 					collection_count -= 1
 					if collection_count > 0:
-				 		macro += ' || '
+						macro += ' || '
 		macro += '\n$body#endif\n'
 	else:
 		macro = '$body'
@@ -272,6 +276,9 @@ for command in device_commands:
 			elif text == '**':
 				front_mods = ''
 				back_mods = '** '
+			elif text == 'struct**':
+				front_mods = 'struct '
+				back_mods = '** '
 			elif text == 'const*':
 				front_mods = 'const '
 				back_mods = '* '
@@ -281,22 +288,25 @@ for command in device_commands:
 			elif text == 'const*const*':
 				front_mods = 'const '
 				back_mods = '* const* '
+			elif text == 'conststruct*':
+				front_mods = 'const struct '
+				back_mods = '* '
 		if i == args_count and arg_type == 'VkDevice':
 			args_names += arg_name
 			if i > 0:
 				i -= 1
 				if i > 0:
-			 		args_names += ', '
+					args_names += ', '
 		else:
-			if arg_type in aliased_types:
+			if arg_type in aliased_types and  arg_type not in excluded_alias_types:
 				arg_type = aliased_types[arg_type]
 			args_full += arg_template.substitute(front_mods = front_mods, arg_type = arg_type, back_mods = back_mods, arg_name = arg_name, array = array)
 			args_names += arg_name
 			if i > 0:
 				i -= 1
 				if i > 0:
-			 		args_full += ', '
-			 		args_names += ', '
+					args_full += ', '
+					args_names += ', '
 
 	proxy_body = proxy_template.substitute(return_type = return_type, proxy_name = proxy_name, args_full = args_full, opt_return = opt_return, fp_name = fp_name, args_names = args_names)
 	fp_decl_body = fp_decl_template.substitute(pfn_name = pfn_name, fp_name = fp_name)

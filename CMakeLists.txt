@@ -42,25 +42,27 @@ else()
   set(VK_BOOTSTRAP_COMPILER_CLANGPP 0)
 endif()
 
-target_compile_options(vk-bootstrap-compiler-warnings
-        INTERFACE
-        $<$<OR:$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>,${VK_BOOTSTRAP_COMPILER_CLANGPP}>:
-        -Wall
-        -Wextra
-        -Wconversion
-        -Wsign-conversion>
-        $<$<CXX_COMPILER_ID:MSVC>:
-        /W4>
-        )
-
-if(VK_BOOTSTRAP_WERROR)
+if(NOT VK_BOOTSTRAP_DISABLE_WARNINGS)
   target_compile_options(vk-bootstrap-compiler-warnings
           INTERFACE
           $<$<OR:$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>,${VK_BOOTSTRAP_COMPILER_CLANGPP}>:
-          -pedantic-errors>
+          -Wall
+          -Wextra
+          -Wconversion
+          -Wsign-conversion>
           $<$<CXX_COMPILER_ID:MSVC>:
-          /WX>
+          /W4>
           )
+
+  if(VK_BOOTSTRAP_WERROR)
+    target_compile_options(vk-bootstrap-compiler-warnings
+            INTERFACE
+            $<$<OR:$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>,${VK_BOOTSTRAP_COMPILER_CLANGPP}>:
+            -pedantic-errors>
+            $<$<CXX_COMPILER_ID:MSVC>:
+            /WX>
+            )
+  endif()
 endif()
 
 target_include_directories(vk-bootstrap PUBLIC
@@ -73,22 +75,28 @@ target_link_libraries(vk-bootstrap
         ${CMAKE_DL_LIBS})
 target_compile_features(vk-bootstrap PUBLIC cxx_std_14)
 
+
 option(INSTALL_VK_BOOTSTRAP "Install vk-bootstrap library" ON)
 
 if(${INSTALL_VK_BOOTSTRAP})
 	include(GNUInstallDirs)
 	install(FILES src/VkBootstrap.h src/VkBootstrapDispatch.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 	install(TARGETS vk-bootstrap vk-bootstrap-compiler-warnings vk-bootstrap-vulkan-headers
-			EXPORT vk-bootstrap-targets
-			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-			LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-			ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-	
-	option(VK_BOOTSTRAP_TEST "Test Vk-Bootstrap with glfw and Catch2" OFF)
+        	EXPORT vk-bootstrap-targets
+	        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR VK_BOOTSTRAP_TEST)
+# By default, we want to only build tests if this repo is built standalone, but still should be configurable by the user
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    set(VK_BOOTSTRAP_TEST_DEFAULT_VALUE ON)
+else()
+    set(VK_BOOTSTRAP_TEST_DEFAULT_VALUE OFF)
+endif()
+option(VK_BOOTSTRAP_TEST "Test Vk-Bootstrap with glfw and Catch2" ${VK_BOOTSTRAP_TEST_DEFAULT_VALUE})
 
+if(VK_BOOTSTRAP_TEST)
     add_subdirectory(ext)
     add_subdirectory(tests)
     add_subdirectory(example)
